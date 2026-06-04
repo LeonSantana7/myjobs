@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#0f0f0f" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Vagas" />
+  <meta name="description" content="Rastreador de candidaturas de emprego" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <title>Rastreador de Vagas</title>
+  <style>
+    :root {
+      --bg: #0f0f0f;
+      --bg2: #1a1a1a;
+      --bg3: #242424;
+      --bg4: #2e2e2e;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --text: #f0f0f0;
+      --text2: #a0a0a0;
+      --text3: #666;
+      --accent: #6ee7b7;
+      --accent-bg: rgba(110,231,183,0.1);
+      --accent-border: rgba(110,231,183,0.25);
+      --blue: #60a5fa;
+      --blue-bg: rgba(96,165,250,0.1);
+      --amber: #fbbf24;
+      --amber-bg: rgba(251,191,36,0.1);
+      --purple: #a78bfa;
+      --purple-bg: rgba(167,139,250,0.1);
+      --red: #f87171;
+      --red-bg: rgba(248,113,113,0.1);
+      --radius: 14px;
+      --radius-sm: 8px;
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      overflow-x: hidden;
+    }
+
+    /* ── TOPO ── */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(15,15,15,0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: calc(var(--safe-top) + 14px) 20px 14px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .app-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    .app-title span { color: var(--accent); }
+
+    .header-btn {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 18px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+    .header-btn:active { background: var(--bg4); transform: scale(0.95); }
+
+    /* ── STATS ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      padding: 16px 16px 0;
+    }
+
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 10px;
+      text-align: center;
+    }
+
+    .stat-card .sv { font-size: 22px; font-weight: 700; line-height: 1; margin-bottom: 4px; }
+    .stat-card .sl { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card.s-total .sv { color: var(--text); }
+    .stat-card.s-entrev .sv { color: var(--blue); }
+    .stat-card.s-taxa .sv { color: var(--accent); }
+    .stat-card.s-oferta .sv { color: var(--purple); }
+
+    /* ── FILTROS ── */
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      padding: 14px 16px 0;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .filter-row::-webkit-scrollbar { display: none; }
+
+    .filter-pill {
+      flex-shrink: 0;
+      font-size: 12px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border2);
+      background: var(--bg2);
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+    .filter-pill.active {
+      background: var(--accent-bg);
+      border-color: var(--accent-border);
+      color: var(--accent);
+    }
+
+    /* ── COLUNAS / KANBAN ── */
+    .board-scroll {
+      display: flex;
+      gap: 12px;
+      padding: 14px 16px calc(var(--safe-bottom) + 90px);
+      overflow-x: auto;
+      scrollbar-width: none;
+      align-items: flex-start;
+    }
+    .board-scroll::-webkit-scrollbar { display: none; }
+
+    .col {
+      flex-shrink: 0;
+      width: 240px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .col-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 14px 10px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .col-title {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .col-badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+
+    .col-body { padding: 10px; min-height: 80px; }
+    .col-empty { text-align: center; color: var(--text3); font-size: 12px; padding: 20px 0; }
+
+    /* status colors */
+    .col[data-status="aplicado"] .col-title { color: var(--blue); }
+    .col[data-status="aplicado"] .col-badge { background: var(--blue-bg); color: var(--blue); }
+    .col[data-status="entrevista"] .col-title { color: var(--accent); }
+    .col[data-status="entrevista"] .col-badge { background: var(--accent-bg); color: var(--accent); }
+    .col[data-status="teste"] .col-title { color: var(--amber); }
+    .col[data-status="teste"] .col-badge { background: var(--amber-bg); color: var(--amber); }
+    .col[data-status="oferta"] .col-title { color: var(--purple); }
+    .col[data-status="oferta"] .col-badge { background: var(--purple-bg); color: var(--purple); }
+    .col[data-status="recusado"] .col-title { color: var(--red); }
+    .col[data-status="recusado"] .col-badge { background: var(--red-bg); color: var(--red); }
+
+    /* ── CARD ── */
+    .card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 8px;
+      cursor: pointer;
+      transition: border-color 0.15s, transform 0.1s;
+      active-scale: 0.98;
+    }
+    .card:active { transform: scale(0.98); border-color: var(--border2); }
+    .card:last-child { margin-bottom: 0; }
+
+    .card-co { font-size: 11px; color: var(--text2); margin-bottom: 2px; }
+    .card-role { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--text); }
+
+    .card-chips {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      align-items: center;
+    }
+
+    .chip {
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 500;
+    }
+    .chip-remote { background: var(--accent-bg); color: var(--accent); }
+    .chip-presencial { background: var(--blue-bg); color: var(--blue); }
+    .chip-hibrido { background: var(--amber-bg); color: var(--amber); }
+    .chip-salary { background: var(--bg4); color: var(--text2); }
+
+    .card-date { font-size: 10px; color: var(--text3); margin-left: auto; }
+    .card-note { font-size: 11px; color: var(--text2); margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-style: italic; }
+
+    /* ── FAB ── */
+    .fab {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 24px);
+      right: 20px;
+      width: 58px; height: 58px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #0f0f0f;
+      font-size: 28px;
+      font-weight: 300;
+      border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 20px rgba(110,231,183,0.4);
+      z-index: 40;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .fab:active { transform: scale(0.92); box-shadow: 0 2px 10px rgba(110,231,183,0.3); }
+
+    /* ── SHEET / MODAL ── */
+    .sheet-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 100;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .sheet-overlay.open { display: flex; align-items: flex-end; justify-content: center; }
+
+    .sheet {
+      background: var(--bg2);
+      border-radius: 20px 20px 0 0;
+      border-top: 1px solid var(--border2);
+      width: 100%;
+      max-width: 520px;
+      max-height: 92dvh;
+      overflow-y: auto;
+      padding: 0 0 calc(var(--safe-bottom) + 20px);
+      animation: slideUp 0.25s cubic-bezier(0.32,0.72,0,1);
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); opacity: 0.5; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .sheet-handle {
+      width: 36px; height: 4px;
+      background: var(--bg4);
+      border-radius: 2px;
+      margin: 12px auto 0;
+    }
+
+    .sheet-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .sheet-title { font-size: 17px; font-weight: 700; }
+
+    .sheet-close {
+      width: 30px; height: 30px;
+      border-radius: 50%;
+      background: var(--bg3);
+      border: none;
+      color: var(--text2);
+      font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+    }
+
+    .sheet-body { padding: 16px 20px; }
+
+    /* ── FORM ── */
+    .form-group { margin-bottom: 14px; }
+    .form-label { font-size: 12px; color: var(--text2); margin-bottom: 6px; display: block; font-weight: 500; letter-spacing: 0.02em; }
+    .form-label .req { color: var(--accent); margin-left: 2px; }
+
+    .form-input, .form-select, .form-textarea {
+      width: 100%;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 15px;
+      font-family: inherit;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.15s;
+      -webkit-appearance: none;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus {
+      border-color: var(--accent);
+    }
+    .form-input::placeholder, .form-textarea::placeholder { color: var(--text3); }
+    .form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23666' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; padding-right: 36px; }
+    .form-textarea { min-height: 80px; resize: vertical; }
+
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+    .btn-primary {
+      flex: 1;
+      padding: 14px;
+      background: var(--accent);
+      color: #0f0f0f;
+      border: none;
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s, transform 0.1s;
+    }
+    .btn-primary:active { opacity: 0.85; transform: scale(0.98); }
+
+    .btn-secondary {
+      padding: 14px 20px;
+      background: var(--bg3);
+      color: var(--text2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      font-size: 15px;
+      cursor: pointer;
+    }
+    .btn-secondary:active { background: var(--bg4); }
+
+    /* ── DETAIL SHEET ── */
+    .detail-company { font-size: 13px; color: var(--text2); margin-bottom: 4px; }
+    .detail-role { font-size: 20px; font-weight: 700; margin-bottom: 14px; }
+
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+    .detail-item { background: var(--bg3); border-radius: var(--radius-sm); padding: 10px 12px; }
+    .detail-item .di-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 4px; }
+    .detail-item .di-value { font-size: 13px; font-weight: 500; color: var(--text); }
+
+    .detail-notes { background: var(--bg3); border-radius: var(--radius-sm); padding: 12px; margin-bottom: 16px; font-size: 13px; color: var(--text2); white-space: pre-wrap; line-height: 1.6; }
+
+    .move-section { margin-bottom: 16px; }
+    .move-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 8px; }
+    .move-btns { display: flex; gap: 7px; flex-wrap: wrap; }
+    .move-btn {
+      font-size: 12px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border2);
+      background: var(--bg3);
+      color: var(--text2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .move-btn:active { background: var(--bg4); }
+
+    .detail-actions { display: flex; gap: 10px; }
+    .btn-edit {
+      flex: 1;
+      padding: 13px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-delete {
+      padding: 13px 18px;
+      background: var(--red-bg);
+      border: 1px solid rgba(248,113,113,0.2);
+      border-radius: var(--radius-sm);
+      color: var(--red);
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .link-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius-sm);
+      padding: 11px 14px;
+      font-size: 13px;
+      color: var(--blue);
+      text-decoration: none;
+      margin-bottom: 12px;
+      word-break: break-all;
+    }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed;
+      bottom: calc(var(--safe-bottom) + 90px);
+      left: 50%;
+      transform: translateX(-50%) translateY(10px);
+      background: var(--bg4);
+      border: 1px solid var(--border2);
+      border-radius: 999px;
+      padding: 10px 20px;
+      font-size: 13px;
+      color: var(--text);
+      z-index: 200;
+      opacity: 0;
+      transition: opacity 0.2s, transform 0.2s;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── LOADING ── */
+    .loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 50vh;
+      gap: 12px;
+      color: var(--text2);
+      font-size: 14px;
+    }
+    .spinner {
+      width: 28px; height: 28px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── EMPTY STATE ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 30px;
+      color: var(--text3);
+    }
+    .empty-icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-title { font-size: 16px; font-weight: 600; color: var(--text2); margin-bottom: 6px; }
+    .empty-sub { font-size: 13px; }
+
+    /* ── CONFIRMAR DELETE ── */
+    .confirm-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .confirm-overlay.open { display: flex; }
+    .confirm-box {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 320px;
+      text-align: center;
+    }
+    .confirm-box h3 { font-size: 17px; margin-bottom: 8px; }
+    .confirm-box p { font-size: 13px; color: var(--text2); margin-bottom: 20px; line-height: 1.5; }
+    .confirm-btns { display: flex; gap: 10px; }
+    .confirm-cancel { flex: 1; padding: 12px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); color: var(--text2); font-size: 14px; cursor: pointer; }
+    .confirm-delete { flex: 1; padding: 12px; background: var(--red); border: none; border-radius: var(--radius-sm); color: #fff; font-size: 14px; font-weight: 700; cursor: pointer; }
+
+    /* scrollbar global */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+    @media (min-width: 480px) {
+      .stats-bar { padding: 16px 20px 0; }
+      .filter-row { padding: 14px 20px 0; }
+      .board-scroll { padding: 14px 20px calc(var(--safe-bottom) + 90px); }
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-title">My<span>Jobs</span></div>
+  <button class="header-btn" onclick="exportData()" title="Exportar JSON" aria-label="Exportar dados">⬇</button>
+</header>
+
+<!-- STATS -->
+<div class="stats-bar" id="stats-bar">
+  <div class="stat-card s-total"><div class="sv" id="st-total">0</div><div class="sl">Total</div></div>
+  <div class="stat-card s-entrev"><div class="sv" id="st-entrev">0</div><div class="sl">Entrev.</div></div>
+  <div class="stat-card s-taxa"><div class="sv" id="st-taxa">0%</div><div class="sl">Retorno</div></div>
+  <div class="stat-card s-oferta"><div class="sv" id="st-oferta">0</div><div class="sl">Ofertas</div></div>
+</div>
+
+<!-- FILTROS -->
+<div class="filter-row" id="filter-row">
+  <button class="filter-pill active" data-filter="">Todos</button>
+  <button class="filter-pill" data-filter="Remote">Remoto</button>
+  <button class="filter-pill" data-filter="Presencial">Presencial</button>
+  <button class="filter-pill" data-filter="Híbrido">Híbrido</button>
+</div>
+
+<!-- BOARD -->
+<div class="board-scroll" id="board">
+  <div class="loading"><div class="spinner"></div>Carregando vagas...</div>
+</div>
+
+<!-- FAB -->
+<button class="fab" onclick="openAdd()" aria-label="Adicionar vaga">+</button>
+
+<!-- SHEET: ADICIONAR / EDITAR -->
+<div class="sheet-overlay" id="form-overlay" onclick="handleOverlayClick(event,'form-overlay')">
+  <div class="sheet" id="form-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title" id="form-title">Nova vaga</span>
+      <button class="sheet-close" onclick="closeForm()" aria-label="Fechar">✕</button>
+    </div>
+    <div class="sheet-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Empresa <span class="req">*</span></label>
+          <input class="form-input" id="f-empresa" placeholder="Google" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cargo <span class="req">*</span></label>
+          <input class="form-input" id="f-cargo" placeholder="UX Designer" autocomplete="off" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Modalidade</label>
+          <select class="form-select" id="f-tipo">
+            <option value="Remote">Remoto</option>
+            <option value="Presencial">Presencial</option>
+            <option value="Híbrido">Híbrido</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Faixa salarial</label>
+          <input class="form-input" id="f-salario" placeholder="R$ 8.000" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Data de aplicação</label>
+          <input class="form-input" type="date" id="f-data" />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Origem</label>
+          <input class="form-input" id="f-origem" placeholder="LinkedIn" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Link da vaga</label>
+        <input class="form-input" type="url" id="f-link" placeholder="https://..." />
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas / observações</label>
+        <textarea class="form-textarea" id="f-notas" placeholder="Contato, próximos passos, impressões..."></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="btn-secondary" onclick="closeForm()">Cancelar</button>
+        <button class="btn-primary" onclick="saveJob()">Salvar vaga</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SHEET: DETALHE -->
+<div class="sheet-overlay" id="detail-overlay" onclick="handleOverlayClick(event,'detail-overlay')">
+  <div class="sheet" id="detail-sheet">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <span class="sheet-title">Detalhes</span>
+      <button class="sheet-close" onclick="closeDetail()" aria-label="Fechar">✕</button>
+    </div>
+    <div class="sheet-body" id="detail-body"></div>
+  </div>
+</div>
+
+<!-- CONFIRM DELETE -->
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Remover vaga?</h3>
+    <p>Esta ação não pode ser desfeita. A vaga será removida permanentemente.</p>
+    <div class="confirm-btns">
+      <button class="confirm-cancel" onclick="closeConfirm()">Cancelar</button>
+      <button class="confirm-delete" id="confirm-yes">Remover</button>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ════════════════════════════════════════════
+// DB — IndexedDB (sem limite prático)
+// ════════════════════════════════════════════
+const DB_NAME = 'myjobs_db';
+const DB_VER = 1;
+const STORE = 'jobs';
+let db;
+
+function openDB() {
+  return new Promise((res, rej) => {
+    const req = indexedDB.open(DB_NAME, DB_VER);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains(STORE)) {
+        const store = d.createObjectStore(STORE, { keyPath: 'id' });
+        store.createIndex('status', 'status', { unique: false });
+        store.createIndex('data', 'data', { unique: false });
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; res(db); };
+    req.onerror = e => rej(e.target.error);
+  });
+}
+
+function dbAll() {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readonly');
+    const req = tx.objectStore(STORE).getAll();
+    req.onsuccess = () => res(req.result || []);
+    req.onerror = e => rej(e.target.error);
+  });
+}
+
+function dbPut(job) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).put(job);
+    req.onsuccess = () => res();
+    req.onerror = e => rej(e.target.error);
+  });
+}
+
+function dbDelete(id) {
+  return new Promise((res, rej) => {
+    const tx = db.transaction(STORE, 'readwrite');
+    const req = tx.objectStore(STORE).delete(id);
+    req.onsuccess = () => res();
+    req.onerror = e => rej(e.target.error);
+  });
+}
+
+// ════════════════════════════════════════════
+// STATE
+// ════════════════════════════════════════════
+const COLS = [
+  { id: 'aplicado',   label: 'Aplicado'    },
+  { id: 'entrevista', label: 'Entrevista'  },
+  { id: 'teste',      label: 'Teste / Case'},
+  { id: 'oferta',     label: 'Oferta'      },
+  { id: 'recusado',   label: 'Recusado'    },
+];
+
+let allJobs = [];
+let activeFilter = '';
+let editId = null;
+let pendingDeleteId = null;
+let viewId = null;
+
+// ════════════════════════════════════════════
+// RENDER
+// ════════════════════════════════════════════
+function filteredJobs() {
+  if (!activeFilter) return allJobs;
+  return allJobs.filter(j => j.tipo === activeFilter);
+}
+
+function fmt(d) {
+  if (!d) return '—';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y.slice(2)}`;
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+}
+
+function today() {
+  return new Date().toISOString().slice(0,10);
+}
+
+function renderStats() {
+  const t = allJobs.length;
+  const entrev = allJobs.filter(j => ['entrevista','teste','oferta'].includes(j.status)).length;
+  const ofertas = allJobs.filter(j => j.status === 'oferta').length;
+  const taxa = t > 0 ? Math.round((entrev/t)*100) : 0;
+  document.getElementById('st-total').textContent = t;
+  document.getElementById('st-entrev').textContent = entrev;
+  document.getElementById('st-taxa').textContent = taxa + '%';
+  document.getElementById('st-oferta').textContent = ofertas;
+}
+
+function chipClass(tipo) {
+  if (tipo === 'Remote') return 'chip-remote';
+  if (tipo === 'Presencial') return 'chip-presencial';
+  return 'chip-hibrido';
+}
+
+function chipLabel(tipo) {
+  return tipo === 'Remote' ? 'Remoto' : tipo;
+}
+
+function renderBoard() {
+  const jobs = filteredJobs();
+  const board = document.getElementById('board');
+
+  if (allJobs.length === 0) {
+    board.innerHTML = `<div class="empty-state" style="width:100%;min-width:280px">
+      <div class="empty-icon">💼</div>
+      <div class="empty-title">Nenhuma vaga ainda</div>
+      <div class="empty-sub">Toque no + para adicionar sua primeira candidatura</div>
+    </div>`;
+    return;
+  }
+
+  board.innerHTML = COLS.map(col => {
+    const colJobs = jobs.filter(j => j.status === col.id)
+      .sort((a,b) => (b.data||'') > (a.data||'') ? 1 : -1);
+    return `
+    <div class="col" data-status="${col.id}">
+      <div class="col-head">
+        <span class="col-title">${col.label}</span>
+        <span class="col-badge">${colJobs.length}</span>
+      </div>
+      <div class="col-body">
+        ${colJobs.length === 0
+          ? '<div class="col-empty">Vazio</div>'
+          : colJobs.map(j => `
+          <div class="card" onclick="openDetail('${j.id}')">
+            <div class="card-co">${escHtml(j.empresa)}</div>
+            <div class="card-role">${escHtml(j.cargo)}</div>
+            <div class="card-chips">
+              <span class="chip ${chipClass(j.tipo)}">${chipLabel(j.tipo)}</span>
+              ${j.salario ? `<span class="chip chip-salary">${escHtml(j.salario)}</span>` : ''}
+              <span class="card-date">${fmt(j.data)}</span>
+            </div>
+            ${j.notas ? `<div class="card-note">${escHtml(j.notas)}</div>` : ''}
+          </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function render() {
+  renderStats();
+  renderBoard();
+}
+
+function escHtml(s) {
+  return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ════════════════════════════════════════════
+// FILTROS
+// ════════════════════════════════════════════
+document.getElementById('filter-row').addEventListener('click', e => {
+  const pill = e.target.closest('.filter-pill');
+  if (!pill) return;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  pill.classList.add('active');
+  activeFilter = pill.dataset.filter;
+  renderBoard();
+});
+
+// ════════════════════════════════════════════
+// FORM — ADICIONAR / EDITAR
+// ════════════════════════════════════════════
+function openAdd() {
+  editId = null;
+  document.getElementById('form-title').textContent = 'Nova vaga';
+  ['empresa','cargo','salario','origem','link','notas'].forEach(f =>
+    document.getElementById('f-'+f).value = '');
+  document.getElementById('f-data').value = today();
+  document.getElementById('f-tipo').value = 'Remote';
+  document.getElementById('form-overlay').classList.add('open');
+  setTimeout(() => document.getElementById('f-empresa').focus(), 350);
+}
+
+function openEdit(id) {
+  const j = allJobs.find(x => x.id === id);
+  if (!j) return;
+  editId = id;
+  document.getElementById('form-title').textContent = 'Editar vaga';
+  document.getElementById('f-empresa').value = j.empresa || '';
+  document.getElementById('f-cargo').value = j.cargo || '';
+  document.getElementById('f-tipo').value = j.tipo || 'Remote';
+  document.getElementById('f-salario').value = j.salario || '';
+  document.getElementById('f-data').value = j.data || '';
+  document.getElementById('f-origem').value = j.origem || '';
+  document.getElementById('f-link').value = j.link || '';
+  document.getElementById('f-notas').value = j.notas || '';
+  closeDetail();
+  setTimeout(() => {
+    document.getElementById('form-overlay').classList.add('open');
+  }, 200);
+}
+
+function closeForm() {
+  document.getElementById('form-overlay').classList.remove('open');
+  editId = null;
+}
+
+async function saveJob() {
+  const empresa = document.getElementById('f-empresa').value.trim();
+  const cargo = document.getElementById('f-cargo').value.trim();
+  if (!empresa || !cargo) { toast('Empresa e cargo são obrigatórios'); return; }
+
+  const job = {
+    id: editId || uid(),
+    empresa, cargo,
+    tipo: document.getElementById('f-tipo').value,
+    salario: document.getElementById('f-salario').value.trim(),
+    data: document.getElementById('f-data').value,
+    origem: document.getElementById('f-origem').value.trim(),
+    link: document.getElementById('f-link').value.trim(),
+    notas: document.getElementById('f-notas').value.trim(),
+    status: 'aplicado',
+    updatedAt: Date.now(),
+  };
+
+  if (editId) {
+    const existing = allJobs.find(x => x.id === editId);
+    if (existing) job.status = existing.status;
+    const idx = allJobs.findIndex(x => x.id === editId);
+    allJobs[idx] = job;
+  } else {
+    allJobs.unshift(job);
+  }
+
+  await dbPut(job);
+  closeForm();
+  render();
+  toast(editId ? 'Vaga atualizada ✓' : 'Vaga adicionada ✓');
+}
+
+// ════════════════════════════════════════════
+// DETALHE
+// ════════════════════════════════════════════
+function openDetail(id) {
+  viewId = id;
+  const j = allJobs.find(x => x.id === id);
+  if (!j) return;
+
+  const moveBtns = COLS.filter(c => c.id !== j.status).map(c =>
+    `<button class="move-btn" onclick="moveJob('${j.id}','${c.id}')">${c.label}</button>`
+  ).join('');
+
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-company">${escHtml(j.empresa)}</div>
+    <div class="detail-role">${escHtml(j.cargo)}</div>
+    <div class="detail-grid">
+      <div class="detail-item"><div class="di-label">Status</div><div class="di-value">${COLS.find(c=>c.id===j.status)?.label||j.status}</div></div>
+      <div class="detail-item"><div class="di-label">Modalidade</div><div class="di-value">${chipLabel(j.tipo)}</div></div>
+      ${j.salario ? `<div class="detail-item"><div class="di-label">Salário</div><div class="di-value">${escHtml(j.salario)}</div></div>` : ''}
+      ${j.data ? `<div class="detail-item"><div class="di-label">Data</div><div class="di-value">${fmt(j.data)}</div></div>` : ''}
+      ${j.origem ? `<div class="detail-item"><div class="di-label">Origem</div><div class="di-value">${escHtml(j.origem)}</div></div>` : ''}
+    </div>
+    ${j.link ? `<a class="link-btn" href="${escHtml(j.link)}" target="_blank" rel="noopener">🔗 Ver vaga original</a>` : ''}
+    ${j.notas ? `<div class="detail-notes">${escHtml(j.notas)}</div>` : ''}
+    <div class="move-section">
+      <div class="move-label">Mover para</div>
+      <div class="move-btns">${moveBtns}</div>
+    </div>
+    <div class="detail-actions">
+      <button class="btn-edit" onclick="openEdit('${j.id}')">✏️ Editar</button>
+      <button class="btn-delete" onclick="askDelete('${j.id}')">🗑 Remover</button>
+    </div>
+  `;
+  document.getElementById('detail-overlay').classList.add('open');
+}
+
+function closeDetail() {
+  document.getElementById('detail-overlay').classList.remove('open');
+  viewId = null;
+}
+
+async function moveJob(id, newStatus) {
+  const j = allJobs.find(x => x.id === id);
+  if (!j) return;
+  j.status = newStatus;
+  j.updatedAt = Date.now();
+  await dbPut(j);
+  closeDetail();
+  render();
+  toast('Movido para ' + COLS.find(c=>c.id===newStatus)?.label);
+}
+
+// ════════════════════════════════════════════
+// DELETE
+// ════════════════════════════════════════════
+function askDelete(id) {
+  pendingDeleteId = id;
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('open');
+  pendingDeleteId = null;
+}
+
+document.getElementById('confirm-yes').addEventListener('click', async () => {
+  if (!pendingDeleteId) return;
+  allJobs = allJobs.filter(j => j.id !== pendingDeleteId);
+  await dbDelete(pendingDeleteId);
+  closeConfirm();
+  closeDetail();
+  render();
+  toast('Vaga removida');
+});
+
+// ════════════════════════════════════════════
+// OVERLAY CLICK OUTSIDE
+// ════════════════════════════════════════════
+function handleOverlayClick(e, id) {
+  if (e.target.id === id) {
+    if (id === 'form-overlay') closeForm();
+    else closeDetail();
+  }
+}
+
+// ════════════════════════════════════════════
+// TOAST
+// ════════════════════════════════════════════
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ════════════════════════════════════════════
+// EXPORTAR JSON
+// ════════════════════════════════════════════
+function exportData() {
+  const data = JSON.stringify(allJobs, null, 2);
+  const blob = new Blob([data], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `vagas_${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  toast('Exportado com sucesso ✓');
+}
+
+// ════════════════════════════════════════════
+// SERVICE WORKER
+// ════════════════════════════════════════════
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(() => {});
+  });
+}
+
+// ════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════
+openDB().then(async () => {
+  allJobs = await dbAll();
+  allJobs.sort((a,b) => (b.updatedAt||0) - (a.updatedAt||0));
+  render();
+}).catch(() => {
+  document.getElementById('board').innerHTML =
+    '<div class="loading" style="color:var(--red)">Erro ao abrir banco de dados</div>';
+});
+</script>
+</body>
+</html>
