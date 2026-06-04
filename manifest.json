@@ -2,7 +2,8 @@
   "name": "MyJobs — Rastreador de Vagas",
   "short_name": "MyJobs",
   "description": "Rastreie suas candidaturas de emprego em um kanban simples e rápido",
-  "start_url": "/",
+  "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#0f0f0f",
@@ -22,6 +23,5 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["productivity", "utilities"],
-  "screenshots": []
+  "categories": ["productivity", "utilities"]
 }
